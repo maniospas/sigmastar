@@ -1,6 +1,7 @@
 from sigmastar.parser.tokenize import tokenize, Token
 from sigmastar.parser.types import Type, Primitive, type
 from sigmastar.parser.expressions import *
+from sigmastar.parser.function import assert_variable_name, Function
 from sigmastar.extern import primitives, builtins
 import keyword
 import importlib
@@ -73,7 +74,7 @@ class Parser:
     def _parse_function(self):
         # always start with a primitive
             self.consume("F", "Expected F (function) declaration here")
-            signature = type(self.next())
+            signature = type(self.next(), primitives)
             name = self.next()
             self.consume("(", "Expected opening parenthesis expected here")
             arguments: list[Token] = list()
@@ -94,7 +95,7 @@ class Parser:
             self.consume("}", "Expected closing parenthesis bracket here")
             return Function(name, 
                 {str(arg): sig for arg, sig in zip(arguments, signature.primitives)},
-                type(Token("".join([ret.alias for ret in signature.primitives[len(arguments):]]), name.path,name.row,name.col)),
+                type(Token("".join([ret.alias for ret in signature.primitives[len(arguments):]]), name.path,name.row,name.col), primitives),
                 body,
             )
 

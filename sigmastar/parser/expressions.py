@@ -1,26 +1,8 @@
 from sigmastar.parser.tokenize import Token
-
-
-variadic_returns = True
-
-
-def _flatten(values):
-    out = []
-    for v in values:
-        if isinstance(v, (list, tuple)):
-            out.extend(_flatten(v))
-        elif hasattr(v, "exprs") and isinstance(v.exprs, list):
-            out.extend(_flatten(v.exprs))
-        else:
-            out.append(v)
-    return out
-
-
-class Context:
-    def __init__(self, globs: dict[str, "Function"], locals, ret):
-        self.globals = globs
-        self.locals: dict[str, Type] = {k: v for k, v in locals.items()}
-        self.ret = ret
+from sigmastar.parser.types import Primitive, Type, type
+from sigmastar.parser.function import *
+from sigmastar.parser.function import _flatten
+from sigmastar.extern import primitives
 
 
 class ExpressionIf:
@@ -139,7 +121,7 @@ class ExpressionReturn:
             t = expr.validate(context)
             assert isinstance(t, Type) or isinstance(t, Primitive)
             types.append(t)
-        joined = type(Token("".join([t.alias for t in types]), self.token.path, self.token.row, self.token.col))
+        joined = type(Token("".join([t.alias for t in types]), self.token.path, self.token.row, self.token.col), primitives)
         if context.ret.alias != joined.alias:
             self.token.error(f"Expected {context.ret.pretty()} but got {joined.pretty()} type")
         return None
@@ -165,7 +147,7 @@ class ExpressionAssign:
                 self.result.error("No expression computed at the right-hand side of assignment")
             assert isinstance(t, Type) or isinstance(t, Primitive)
             types.append(t)
-        joined = type(Token("".join([t.alias for t in types]), self.result.path, self.result.row, self.result.col))
+        joined = type(Token("".join([t.alias for t in types]), self.result.path, self.result.row, self.result.col), primitives)
         prev = context.locals.get(str(self.result), None)
         if prev:
             if prev.alias != joined.alias:

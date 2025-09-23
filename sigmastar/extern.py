@@ -6,9 +6,11 @@ from sigmastar.parser.function import Function
 primitives = {
     "N": Primitive("N", "int"),
     "R": Primitive("R", "float"),
+    "S": Primitive("R", "string"),
     "B": Primitive("B", "boolean"),
-    "P": Primitive("P", "pointer"),
     "F": Primitive("F", "function"),
+    "A": Primitive("A", "list"),
+    "M": Primitive("M", "dict"),
 }
 
 builtins = {

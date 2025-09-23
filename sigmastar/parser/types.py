@@ -13,7 +13,7 @@ class Primitive:
         return self.alias+" ("+self.actual+")"
 
 class Type:
-    def __init__(self, token: Token):
+    def __init__(self, token: Token, primitives: dict[str, "Primitive"]):
         assert isinstance(token, Token)
         self.alias = str(token)
         pattern = re.compile(r"([A-Za-z])(\d*)")
@@ -49,8 +49,8 @@ class Type:
     def pretty(self):
         return self.alias
 
-def type(token: Token):
-    t = Type(token)
+def type(token: Token, primitives: dict[str, "Primitive"]):
+    t = Type(token, primitives)
     if not t.primitives:
         token.error("Types must consist of at least one primitive")
     if len(t.primitives) == 1:

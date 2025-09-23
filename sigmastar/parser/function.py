@@ -1,6 +1,26 @@
-from sigmastar.parser.expressions import *
 from sigmastar.parser.types import Type, Primitive
+from sigmastar.parser.tokenize import Token
+import keyword
 
+variadic_returns = True
+
+
+def _flatten(values):
+    out = []
+    for v in values:
+        if isinstance(v, (list, tuple)):
+            out.extend(_flatten(v))
+        elif hasattr(v, "exprs") and isinstance(v.exprs, list):
+            out.extend(_flatten(v.exprs))
+        else:
+            out.append(v)
+    return out
+
+class Context:
+    def __init__(self, globs: dict[str, "Function"], locals, ret):
+        self.globals = globs
+        self.locals: dict[str, Type] = {k: v for k, v in locals.items()}
+        self.ret = ret
 
 class Function:
     def __init__(self, name: Token, args: dict[str,Type], ret: Type, expressions: list):
