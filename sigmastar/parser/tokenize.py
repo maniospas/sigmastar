@@ -22,19 +22,30 @@ class Token:
         print(f"at {self.path}:{self.row}:{self.col}\n{line}\n{indicator}")
         exit(1)
 
+
 def tokenize(path: str):
     with open(path, "r", encoding="utf-8") as f:
         text = f.read()
+
+    # --- (a) Strip // comments completely ---
+    # Removes everything from // to end of line.
+    text = re.sub(r"//.*", "", text)
+
+    # Track line starts for row/col calculation
     line_starts = [0]
     for m in re.finditer(r"\n", text):
         line_starts.append(m.end())
+
+    # --- (b) Regex pattern updated to capture double-quoted strings as one token ---
     pattern = (
+        r"\"(?:\\.|[^\"\\])*\"|"          # double-quoted string with optional escapes
         r"\d+\.\d+(?:[eE][+-]?\d+)?|"     # 12.34 or 12.34e-5
         r"\d+\.(?:[eE][+-]?\d+)?|"        # 42. or 42.e+1
         r"\.\d+(?:[eE][+-]?\d+)?|"        # .5 or .5e3
         r"\d+(?:[eE][+-]?\d+)|"           # 3e8
         r"\w+|[^\w\s]"
     )
+
     tokens: list[Token] = []
     for m in re.finditer(pattern, text):
         start = m.start()

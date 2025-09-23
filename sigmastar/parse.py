@@ -73,31 +73,31 @@ class Parser:
 
     def _parse_function(self):
         # always start with a primitive
-            self.consume("F", "Expected F (function) declaration here")
-            signature = type(self.next(), primitives)
-            name = self.next()
-            self.consume("(", "Expected opening parenthesis expected here")
-            arguments: list[Token] = list()
+        #self.consume("F", "Expected F (function) declaration here")
+        signature = type(self.next(), primitives)
+        name = self.next()
+        self.consume("(", "Expected opening parenthesis expected here")
+        arguments: list[Token] = list()
+        token = self.next()
+        while str(token) != ")":
+            assert_variable_name(token)
+            arguments.append(token)
+            if len(arguments) >= len(signature.primitives):
+                token.error("There are fewer or equal signature primitives than the number of arguments")
             token = self.next()
-            while str(token) != ")":
-                assert_variable_name(token)
-                arguments.append(token)
-                if len(arguments) >= len(signature.primitives):
-                    token.error("There are fewer or equal signature primitives than the number of arguments")
+            if str(token) != ")":
+                if str(token)!=",":
+                    token.error("Expected comma to separate argument names")
                 token = self.next()
-                if str(token) != ")":
-                    if str(token)!=",":
-                        token.error("Expected comma to separate argument names")
-                    token = self.next()
-            self.consume("{", "Expected ppening parenthesis bracket here")
-            body = self._parse_function_body()
-            self.pos -= 1
-            self.consume("}", "Expected closing parenthesis bracket here")
-            return Function(name, 
-                {str(arg): sig for arg, sig in zip(arguments, signature.primitives)},
-                type(Token("".join([ret.alias for ret in signature.primitives[len(arguments):]]), name.path,name.row,name.col), primitives),
-                body,
-            )
+        self.consume("{", "Expected ppening parenthesis bracket here")
+        body = self._parse_function_body()
+        self.pos -= 1
+        self.consume("}", "Expected closing parenthesis bracket here")
+        return Function(name, 
+            {str(arg): sig for arg, sig in zip(arguments, signature.primitives)},
+            type(Token("".join([ret.alias for ret in signature.primitives[len(arguments):]]), name.path,name.row,name.col), primitives),
+            body,
+        )
 
     def parse(self):
         functions: list[Function] = list()
