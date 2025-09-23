@@ -8,6 +8,9 @@ R2B le(x,y) {
 
 R6 add_point(ax,ay,bx,by) {
     ret = add(ax,ay), add(bx,by)
+    if le(add(ax,ay),10.0) {
+        return 0.0,0.0
+    }
     return ret
 }
 

@@ -73,20 +73,14 @@ declaration includes a whitespace (in truth, this is a parametric type, but
 more on this later). But you can name the function type like below.
 
 ```java
-C = {RRB}
-
-RRB lt(x,y) { return __lt__(x,y) }
-RRB gt(x,y) { return __gt__(x,y) }
-RRB eq(x,y) { return __eq__(x,y) }
+C = {RRB} // powerset
 
 CRRB symmetry(comparison, x,y) {
     return __eq__(comparison(x,y),comparison(y,x))
 }
 
 B main() {
-    print(symmetry(gt,1.0,2.0))
+    print(symmetry(__lt__,1.0,2.0))
     return True
 }
 ```
-
-`FRRBFRRB` corresponds to notation *(RxRxBx(RxRxB)<sup>&midast;</sup>)<sup>&midast;</sup>* 

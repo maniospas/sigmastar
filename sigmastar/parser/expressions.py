@@ -22,19 +22,39 @@ class ExpressionIf:
             for expr in self.other:
                 ret += expr.code(internal_nesting)
         return ret
+
+    def validate(self, context: Context):
+        cond_type = self.test.validate(context)
+        assert isinstance(cond_type, (Type, Primitive))
+        if cond_type.alias != primitives["B"].alias:
+            self.test.value.error(f"If condition must be Boolean, got {cond_type.pretty()}")
+        for expr in self.body:
+            expr.validate(context)
+        for expr in self.other:
+            expr.validate(context)
+        return None
         
 class ExpressionWhile:
     def __init__(self, test, body: list):
-        self.result = str(result)
-        self.op = str(op)
-        self.args = [str(arg) for arg in args]
+        self.test = test
+        self.body = body
 
     def code(self, nesting):
-        ret = nesting+"while "+self.test.code()+":\n"
-        internal_nesting = nesting+"    "
-        assert self.body, "Cannot implement if condition without a body"
+        ret = nesting + "while " + self.test.code() + ":\n"
+        internal_nesting = nesting + "    "
+        assert self.body, "Cannot implement while loop without a body"
         for expr in self.body:
             ret += expr.code(internal_nesting)
+        return ret
+
+    def validate(self, context: Context):
+        cond_type = self.test.validate(context)
+        assert isinstance(cond_type, (Type, Primitive))
+        if cond_type.alias != primitives["B"].alias:
+            self.test.value.error(f"While condition must be Boolean, got {cond_type.pretty()}")
+        for expr in self.body:
+            expr.validate(context)
+        return None
 
 
 class ExpressionCall:
@@ -115,7 +135,7 @@ class ExpressionReturn:
             # ret += nesting+"for a, r in zip(args, ret if isinstance(ret, tuple) else (ret,)):\n"
             # for i, primitive in enumerate(self.exprs):
             #     ret += nesting+"    if a is not None: assert a==r, 'Incompatible F (function) spaces'\n"
-            ret += nesting+"return __args__[-__numrets__:] if __numrets__ else ()"
+            ret += nesting+"return __args__[-__numrets__:] if __numrets__ else ()\n"
         else:
             ret += nesting+"return ret\n"
         return ret

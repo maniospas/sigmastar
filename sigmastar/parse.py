@@ -51,6 +51,35 @@ class Parser:
             exprs.append(self._parse_call())
         return ExpressionAssign(result, exprs)
 
+    def _parse_if(self):
+        # parse condition
+        test = self._parse_call()
+        self.consume("{", "Expected '{' to start if body")
+        body = self._parse_function_body()
+        # backtrack one token because _parse_function_body consumes the '}'
+        self.pos -= 1
+        self.consume("}", "Expected '}' to end if body")
+
+        other = []
+        # check for optional else
+        if self.pos < len(self.tokens) and str(self.tokens[self.pos]) == "else":
+            self.pos += 1
+            self.consume("{", "Expected '{' to start else body")
+            other = self._parse_function_body()
+            self.pos -= 1
+            self.consume("}", "Expected '}' to end else body")
+        return ExpressionIf(test, body, other)
+
+    def _parse_while(self):
+        # parse condition
+        test = self._parse_call()
+        self.consume("{", "Expected '{' to start while body")
+        body = self._parse_function_body()
+        self.pos -= 1
+        self.consume("}", "Expected '}' to end while body")
+        return ExpressionWhile(test, body)
+
+
     def _parse_function_body(self):
         expressions: list = list()
         while self.pos<len(self.tokens):
@@ -64,7 +93,7 @@ class Parser:
                     exprs.append(self._parse_call())
                 expressions.append(ExpressionReturn(token, exprs))
             elif str(token) == "if":
-                self._parse_if()
+                expressions.append(self._parse_if())
             elif str(token) == "while":
                 expressions.append(self._parse_while())
             else:
