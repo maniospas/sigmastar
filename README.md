@@ -7,20 +7,21 @@ The language interoperates with Python, being able to call
 its modules and be imported as a module.
 
 
-# ⚡ Quickstart
+## ⚡ Quickstart
 
 Here is some a simple Σ* function, using a *Java* highlighter. 
 Its declaration startz from its type `F`, which indicates
 a function pointer. It is then followed by the set in which 
 the function is a mapping, namely on the Cartesian project 
 of *R (reals) x R (reals) x B (booleans)*. Inputs and outputs
-are indistinguishable in this mapping: fewer inputs are 
+are indistinguishable: fewer inputs are 
 zero-initialized, whereas more inputs create assertion checks 
-that the given value is actually computed.
+that the given value is actually computed. Any function call
+retrieves the difference between the given inputs and outputs.
 
 
 ```java
-// module.st
+// example/module.st
 F RRB le(x,y) {
     return __le__(x,y)
 }
@@ -32,10 +33,26 @@ so use an unpacking mechanism like `*` to retrieve values.
 
 
 ```python
-# main.py
+# example/main.py
 import sigmastar as st
-test = st.import_module("test.st")
+test = st.import_module("example/test.st")
 
 print(*test.le(1,2))
-print(*test.le(1,2,True)) # call while asserting that first output is true
+print(*test.le(1,2,True)) # assert first output instead of returning it
+print(*test.le(1))        # zero defaults for missing values (these are returned)
 ```
+
+```bash
+python3 example/main.py
+True
+
+0.0 False
+```
+
+
+## ⚙ Nominal types
+
+*Under implementation.*
+
+Type declarations like the above depend on structural matching of arguments.
+Furthermore, since function input and output types are

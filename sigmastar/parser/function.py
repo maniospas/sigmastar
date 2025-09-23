@@ -36,13 +36,24 @@ class Function:
             if ret:
                 ret += ","
             ret += arg
-        ret = "\ndef "+str(self.name)+"("+ret+", *args):\n"
-        nesting += "    "
         if variadic_returns:
-            ret += nesting+"args = _flatten(args)\n"
-            ret += nesting+"assert len(args) <= "+str(1 if self.ret.is_primitive else len(self.ret.primitives))+", 'Arguments exceeded the limits of "+str(self.ret.alias)+"'\n"
+            ret = "\ndef "+str(self.name)+"(*__args__):\n"
+            nesting += "    "
+            ret += nesting+"__args__ = _flatten(__args__)\n"
+            requisite_args = str((1 if self.ret.is_primitive else len(self.ret.primitives))+len(self.args))
+            ret += nesting+f"__numrets__ = {requisite_args}-len(__args__)\n"
+            ret += nesting+f"assert __numrets__>=0, 'Extra return arguments exceeded the limits of {self.ret.alias}'\n"
+            ret += nesting+f"if __numrets__>0: __args__ = tuple(list(__args__)+[None]*__numrets__)\n"
+            i = 0
+            ret += nesting+"__args__ = list(__args__)\n"
+            for arg_name, arg_type in self.args.items():
+                ret += nesting+f"{arg_name} = __args__[{i}] = {arg_type.actual}(0 if __args__[{i}] is None else __args__[{i}])\n"
+                i += 1
             # for ret_type in self.ret.primitives:
             #     ret += nesting+"assert isinstance(args[0], )"
+        else:
+            ret = "\ndef "+str(self.name)+"("+ret+"):\n"
+            nesting += "    "
         for expr in self.expressions:
             ret += expr.code(nesting)
         return ret

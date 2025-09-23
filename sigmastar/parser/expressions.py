@@ -109,9 +109,14 @@ class ExpressionReturn:
         else:
             ret = nesting+"ret = _flatten("+",".join([expr.code() for expr in self.exprs])+",)\n"
         if variadic_returns:
-            ret += nesting+"for a, r in zip(args, ret if isinstance(ret, tuple) else (ret,)):\n"
-            for i, primitive in enumerate(self.exprs):
-                ret += nesting+"    assert a==r, 'Incompatible F (function) spaces'\n"
+            ret += nesting+"ret = ret if isinstance(ret, tuple) else (ret,)\n"
+            ret += nesting+"__args__ = tuple(list(__args__[:-len(ret)])+list(ret))\n"
+            
+            # ret += nesting+"for a, r in zip(args, ret if isinstance(ret, tuple) else (ret,)):\n"
+            # for i, primitive in enumerate(self.exprs):
+            #     ret += nesting+"    if a is not None: assert a==r, 'Incompatible F (function) spaces'\n"
+            ret += nesting+"return __args__[-__numrets__:] if __numrets__ else ()"
+        else:
             ret += nesting+"return ret\n"
         return ret
 
