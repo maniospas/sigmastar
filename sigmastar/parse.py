@@ -1,10 +1,10 @@
-from sigmastar.parser.tokenize import tokenize, Token
-from sigmastar.parser.types import Type, Primitive, type
-from sigmastar.parser.expressions import *
 from sigmastar.parser.function import assert_variable_name, Function
+from sigmastar.parser.tokenize import tokenize, Token
+from sigmastar.parser.expressions import *
+from sigmastar.parser.types import Type, Primitive, type
 from sigmastar.extern import primitives, builtins
-import keyword
 import importlib
+import atexit
 import os
 
 
@@ -143,9 +143,6 @@ class Parser:
         return code
 
 
-import importlib
-import os
-import atexit
 
 def import_module(path):
     tokens = tokenize(path)
@@ -156,11 +153,16 @@ def import_module(path):
     modname = os.path.basename(base) + "__"
     if os.path.exists(py_path):
         raise FileExistsError(f"Temporary file already exists: {py_path}")
+    os.makedirs(os.path.dirname(py_path), exist_ok=True)
     with open(py_path, "w", encoding="utf-8") as file:
         file.write(code)
     atexit.register(lambda: os.path.exists(py_path) and os.remove(py_path))
     try:
-        module = importlib.import_module(modname)
+        spec = importlib.util.spec_from_file_location(modname, py_path)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Cannot load module from {py_path}")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
     finally:
         if os.path.exists(py_path):
             os.remove(py_path)
