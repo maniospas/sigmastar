@@ -23,12 +23,13 @@ class Context:
         self.ret = ret
 
 class Function:
-    def __init__(self, name: Token, args: dict[str,Type], ret: Type, expressions: list):
+    def __init__(self, name: Token, args: dict[str,Type], ret: Type, expressions: list, is_lambda=False):
         assert isinstance(ret, Type) or isinstance(ret, Primitive)
         self.name = name
         self.args = args
         self.ret = ret
         self.expressions = expressions
+        self.is_lambda = is_lambda
 
     def debug(self):
         print("function:", self.name)

@@ -26,7 +26,7 @@ strings.
 
 ```ruby
 # example/module.st
-*: "sigmastar.ext" # import all from type-hinted Python module
+* "sigmastar.ext" # import all from type-hinted Python module
 
 RRB3 compare(x,y) {
     return R.lt(x,y), R.gt(x,y), R.eq(x,y)
@@ -58,7 +58,6 @@ N main() {
     B.print(result[0])
     B.print(result[1])
     B.print(result[2])
-
     return 0
 }
 
@@ -71,29 +70,26 @@ False
 False
 ```
 
-## ⚙ Powersets
+## ⚙ Function types
 
 Type declarations like the above depend on structural matching of arguments.
 However, you may want to pass a function as an argument. The function type
-must be declared as a new primitive that forms the powerset of a structural type.
-Declaring powersets is done with the syntax `character: {type}`. 
-**There are no anonymous types.** This new primitive must also be a single character,
-letting us write higher-order functions without introducing a heavy type system.
+must be declared as a new primitive with the syntax `character {type}`. 
+**There are no anonymous types.** This new primitive must also be denoted by 
+a single character, letting us write skip type system complexities.
 
 ```ruby
-# example/module.st
-*: "sigmastar.ext" # import from .st or .py module
-C: {RRB} # powerset
+* "sigmastar.ext" # import some python-defined symbols
+C {RRB} # function type
 
 CRRB symmetry(comparison, x,y) {
     return B.eq(comparison(x,y),comparison(y,x))
 }
 
-B main() {
+N main() {
     is_symmetric = symmetry(R.eq,1.0,2.0)
     B.print(is_symmetric)
-
-    return True
+    return 0
 }
 ```
 
@@ -108,7 +104,7 @@ of `R.mul`.
 
 ```ruby
 #example/verify.st
-*: "sigmastar.ext"
+* "sigmastar.ext"
 
 R4 addmul(x,y) {
     return R.add(x,y), R.mul(x,y)
@@ -126,6 +122,26 @@ python3 -m sigmastar example/verify.st
 AssertionError: Return mismatch: expected 50.0, returned 5.0
 ```
 
+## 🧩 Lambdas
+
+You can create a lambda function with partially applied values
+by passing the notation `:type` as part of the arguments. 
+When this is done, all argument values (both inputs and outputs) 
+must be acknowledged to ensure that type positioning is well-understood, 
+and that assertions are pre-emptively asserted if needed.
+
+
+```ruby
+* "sigmastar.ext"
+a {RRR}
+b {RR}
+
+N main() {
+    inc = *R.add(1.0)
+    R.print(inc(7.0))  # prints 8.0
+    return 0
+}
+```
 
 
 
@@ -138,7 +154,7 @@ to access them.
 
 ```ruby
 # example/module.st
-*: "sigmastar.ext" # import all from type-hinted Python module
+* "sigmastar.ext" # import all from type-hinted Python module
 
 RRB3 compare(x,y) {
     return R.lt(x,y), R.gt(x,y), R.eq(x,y)  # R. is a decorative mnemonic

@@ -32,9 +32,11 @@ class Parser:
             self.consume("]", "Expected right bracket to close index access")
             base_expr = ExpressionValue(value)
             return ExpressionAccess(base_expr, index_expr)
-            
         if str(self.tokens[self.pos]) != "(":
             return ExpressionValue(value)
+        is_lambda = str(value)=="*"
+        if is_lambda:
+            value = self.next()
         assert_variable_name(value,) # this is guaranteed to be a function now, so check this
         self.pos += 1 # consume the opening parenthesis
         args = list()
@@ -45,7 +47,7 @@ class Parser:
             if str(self.tokens[self.pos])!=")":
                 self.consume(",", "Expected comma to separate argument names")
         self.pos += 1
-        return ExpressionCall(value, args)
+        return ExpressionCall(value, args, is_lambda=is_lambda)
 
     def _parse_assignment(self, result: Token):
         assert_variable_name(result)
@@ -141,27 +143,26 @@ class Parser:
         custom_imports: list[str] = list()
         functions: list[Function] = list()
         while self.pos<len(self.tokens):
-            if self.pos<len(self.tokens)-1 and str(self.tokens[self.pos+1])==":":
-                key = self.next()
-                key_str = str(key)
-                self.consume(":", "Expected double dots")
-                value = self.next()
-                value_str = str(value)
-                if len(value_str)>=2 and value_str[0]=="\"" and value_str[-1]=="\"":
-                    try: custom_imports.append(load_python(key_str, value_str[1:-1]))
-                    except ModuleNotFoundError as e: value.error(str(e))
-                    except Exception as e: value.error(str(e))
-                else:
-                    self.pos -= 1
-                    if key_str in primitives:
-                        key.error("Primitive already exists: "+primitives[key_str].pretty())
-                    if len(key_str) != 1:
-                        key.error("Primitive names must be a single character")
-                    self.consume("{", "Expected opening bracket")
-                    signature = type(self.next(), primitives)
-                    self.consume("}", "Expected closing bracket")
-                    primitives[key_str] = Powerset(key_str, signature)
+            key = self.next()
+            value = self.next()
+            key_str = str(key)
+            value_str = str(value)
+            if len(value_str)>=2 and value_str[0]=="\"" and value_str[-1]=="\"":
+                try: custom_imports.append(load_python(key_str, value_str[1:-1]))
+                except ModuleNotFoundError as e: value.error(str(e))
+                except Exception as e: value.error(str(e))
+            elif value_str=="{":
+                self.pos -= 1
+                if key_str in primitives:
+                    key.error("Primitive already exists: "+primitives[key_str].pretty())
+                if len(key_str) != 1:
+                    key.error("Primitive names must be a single character")
+                self.consume("{", "Expected opening bracket")
+                signature = type(self.next(), primitives)
+                self.consume("}", "Expected closing bracket")
+                primitives[key_str] = Powerset(key_str, signature)
             else: 
+                self.pos -= 2
                 functions.append(self._parse_function())
         func_globs = builtins|{str(function.name): function for function in functions}
 

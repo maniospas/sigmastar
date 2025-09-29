@@ -56,93 +56,47 @@ class ExpressionWhile:
             expr.validate(context)
         return None
 
+
+
 class ExpressionCall:
-    def __init__(self, op: Token, args: list):
+    def __init__(self, op: Token, args: list, is_lambda: bool=False):
         assert isinstance(op, Token)
         self.op = op
         self.args = args
+        self.is_lambda = is_lambda
 
     def code(self, nesting=""):
-        return nesting + str(self.op) + "(" + ",".join(arg.code() for arg in self.args) + ")" + ("\n" if nesting else "")
+        return nesting+str(self.op)+"("+",".join([arg.code() for arg in self.args])+")"+("\n" if nesting else "")
 
     def validate(self, context: Context):
-        """
-        Validate a call like  RRB3 compare(x,y)
-        and shrink the function's return type
-        when there are more arguments than declared inputs.
-        """
-        func = context.globals.get(str(self.op))
+        func = context.globals.get(str(self.op), None)
         if not func:
-            func = context.locals.get(str(self.op))
+            func = context.locals.get(str(self.op), None)
             if not isinstance(func, Powerset):
                 self.op.error("No function definition or {powerset} variable with this name")
             else:
-                # Build a synthetic Function from a powerset variable
                 if len(self.args) > len(func.base.primitives):
-                    self.op.error(
-                        f"Expected at most {len(func.base.primitives)} "
-                        f"but got {len(self.args)} arguments"
-                    )
-                func = Function(
-                    name=str(self.op),
-                    args={
-                        "__arg" + str(i): t
-                        for i, t in enumerate(func.base.primitives[:len(self.args)])
-                    },
-                    ret=Type(
-                        Token(
-                            ",".join(p.alias for p in func.base.primitives[len(self.args):]),
+                    self.op.error(f"Expected at most {len(func.args)} but got {len(self.args)} arguments")
+                func = Function(str(self.op), 
+                    args={"__arg"+str(idx): arg for idx, arg in enumerate(func.base.primitives[:len(self.args)])}, 
+                    ret=type(
+                        Token(",".join([prim.alias for prim in func.base.primitives[len(self.args):]]),
                             self.op.path, self.op.row, self.op.col
-                        )
+                        ), 
+                        primitives
                     ),
                     expressions=None
                 )
-
-        total_slots = len(func.args) + (len(func.ret.primitives) if not func.ret.is_primitive else 1)
-        if len(self.args) > total_slots:
-            self.op.error(
-                f"Too many arguments: function space has {total_slots} "
-                f"but got {len(self.args)}"
-            )
-
-        # How many of the arguments are “extra” and therefore eat into the return type
-        extra = max(0, len(self.args) - len(func.args))
-
-        # Validate the arguments that match the declared inputs
-        for i, (self_arg, (func_arg_name, func_arg_type)) in enumerate(
-            zip(self.args, func.args.items()), start=1
-        ):
+        if len(self.args) != len(func.args):
+            self.op.error(f"Expected {len(func.args)} but got {len(self.args)} arguments")
+        i = 0
+        for self_arg, func_arg in zip(self.args, func.args):
+            i += 1
             self_arg_type = self_arg.validate(context)
-            assert isinstance(self_arg_type, (Type, Primitive, Powerset))
-            if self_arg_type.comparable() != func_arg_type.comparable():
-                self.op.error(
-                    f"Expected {func_arg_type.pretty()} but got "
-                    f"{self_arg_type.pretty()} type at argument "
-                    f"'{func_arg_name}' (argument {i})"
-                )
-        if extra:
-            if func.ret.is_primitive:
-                if extra > 1:
-                    self.op.error(f"Expected at most {total_slots} arguments but got {len(self.args)}")
-                return Type(Token("", self.op.path, self.op.row, self.op.col), primitives=primitives)
-            else:
-                if extra > len(func.ret.primitives):
-                    self.op.error(
-                        f"Expected at most {total_slots} arguments "
-                        f"but got {len(self.args)}"
-                    )
-                remaining = func.ret.primitives[extra:]
-                return Type(
-                    Token(
-                        ",".join(p.alias for p in remaining),
-                        self.op.path, self.op.row, self.op.col
-                    ),
-                    primitives=primitives
-                )
-
-        # no extra arguments: full declared return type
+            assert isinstance(self_arg_type, Type) or isinstance(self_arg_type, Primitive) or isinstance(self_arg_type, Powerset)
+            if self_arg_type.comparable() != func.args[func_arg].comparable():
+                self.op.error(f"Expected {func.args[func_arg].pretty()} but got {self_arg_type.pretty()} type at argument '{func_arg}' (argument {i})")
         return func.ret
-
 
 class ExpressionValue:
     def __init__(self, value: Token):

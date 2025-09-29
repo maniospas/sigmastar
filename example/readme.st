@@ -1,5 +1,5 @@
-*: "sigmastar.ext" # import statement (* directly imports)
-C: {RRB} # powerset
+* "sigmastar.ext" # import statement (* directly imports)
+C {RRB} # function type
 
 CRRB symmetry(comparison, x,y) {
     return B.eq(comparison(x,y),comparison(y,x))

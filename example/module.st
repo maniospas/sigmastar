@@ -1,4 +1,4 @@
-*: "sigmastar.ext"
+* "sigmastar.ext"
 
 RRB3 compare(x,y) {
     return R.lt(x,y), R.gt(x,y), R.eq(x,y)
