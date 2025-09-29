@@ -9,9 +9,27 @@ its modules and can be imported as a module.
 
 ## ⚡ Quickstart
 
-Here is some a simple Σ* function, using a *ruby* highlighter. 
-Its declaration contain its type: a mapping within
-the set `RRB3`. This notates the Cartesian product 
+Here is a simple Σ* program, consisting of a `main` function without
+any type information. Use a *ruby* highlighter.
+
+
+```ruby
+# example/hello.st
+* "sigmastar.ext"  # import all from type-hinted Python module
+
+main() {
+    message = S.cat("Hello", " world!")
+    S.print(message)
+}
+```
+
+```bash
+python3 -m sigmastar example/hello.st
+Hello world!
+```
+
+
+Below is a function containing a type in the set `RRB3`, that is, the Cartesian product 
 *R (reals) x R (reals) x B (booleans) x B (booleans) x B (booleans)*. 
 The number `3` expands to three total repetitions of the last symbol. 
 The set can also be written as `RRBBB`. 
@@ -20,7 +38,7 @@ Other primitives are `N` for integers and `S` for strings.
 
 ```ruby
 # example/module.st
-* "sigmastar.ext" # import all from type-hinted Python module
+* "sigmastar.ext"
 
 compare(x,y) RRB3 {
     return R.lt(x,y), R.gt(x,y), R.eq(x,y)
@@ -32,21 +50,22 @@ Inputs and outputs are indistinguishable: fewer inputs are
 zero-initialized, and even more of them are allowed (more on this later).
 For example, any `RRB3` definition given an `R` argument
 yields a value in `RB3`. Given an `RRB` argument, it yields a value in `BB`.
-And so on. Those returns are independent of how the function definition splts
-the type into inputs and outputs. This is a set-based view of function 
-spaces as sets that take up space in a high-dimensional manifold.
+And so on. 
+
+This is a generalization of function spaces that lets the be viewed as 
+segments high-dimensional manifolds. If you want simpler intuition, just
+think of each function as defining a set.
 
 Functions only accept one definition each, but you can namespace them
 by prepending `namespace.` to their names; dots are treated as characters,
-and from Python they are viewed as `__`. Add a `main` function
-that lets Σ* directly run the file; absense of a type by convention indicates
-the empty set `{}`. Notice that, in the example, we used `[item]`
+and from Python they are viewed as `__`. Notice that, in the example, we used `[item]`
 to obtain an index value. Only outcomes that repeat the same 
-type can be indexed.
+type can be indexed. Now add a `main` function to the above example to look at
+one usage.
 
 ```ruby
 main() {
-    result = compare(1.0,2.0)
+    result = compare(1.0,2.0) 
     B.print(result[0])
     B.print(result[1])
     B.print(result[2])
@@ -63,10 +82,10 @@ False
 ## ⚙ Function types
 
 Type declarations like the above depend on structural matching of arguments.
-However, you may want to pass a function as an argument. The function type
-must be declared as a new primitive with the syntax `character {type}`. 
-**There are no anonymous types.** This new primitive must also be denoted by 
-a single character, letting us write skip type system complexities.
+However, you may want to pass a function as an argument. To do so,
+the function's type must be declared as a new primitive with the 
+syntax `character {type}`. **There are no anonymous types.** This new primitive must also be denoted by 
+a single character. Overall, we skip many type system complexities.
 
 ```ruby
 * "sigmastar.ext" # import some python-defined symbols
@@ -112,7 +131,7 @@ AssertionError: Return mismatch: expected 50.0, returned 5.0
 
 ## 🧩 Lambdas
 
-Create a lambda function with partially applied values
+Create a lambda with partially applied arguments
 by placing `value|` before a function call. This creates a new
 function that calls the original whlle setting the value as first argument.
 To avoid ambiguity, **cast the result to a named type primitive** 

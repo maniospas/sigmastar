@@ -105,6 +105,8 @@ class ExpressionValue:
         s = str(value)
         if s == "True" or s == "False":
             self.cache = primitives["B"]
+        elif len(s) >= 2 and s[0] == '"' and s[-1] == '"':
+            self.cache = primitives["S"]
         else:
             try:
                 int(s)
