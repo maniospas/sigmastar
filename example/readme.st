@@ -1,4 +1,4 @@
-*: "sigmastar.ext" # import statement (_ directly imports)
+*: "sigmastar.ext" # import statement (* directly imports)
 C: {RRB} # powerset
 
 CRRB symmetry(comparison, x,y) {

@@ -42,8 +42,8 @@ class Type:
             self.primitives.extend([primitives[letter]] * n)
         if pos != len(self.alias):
             token.error( f"Unexpected trailing characters: {self.alias[pos:]}")
-        if not self.primitives:
-            token.error("Cannot declare an empty type")
+        #if not self.primitives:
+        #    token.error("Cannot declare an empty type")
         self.is_primitive = False
         normalized_alias = ""
         for primitive in self.primitives:
@@ -51,10 +51,10 @@ class Type:
         self.alias = normalized_alias
 
     def comparable(self):
-        return self.alias
+        return self.alias if self.alias else "{}"
 
     def pretty(self):
-        return self.alias
+        return self.alias if self.alias else "{}"
 
 class Powerset:
     def __init__(self, alias: str, base: Union[Type,Primitive,"Powerset"]):
@@ -74,8 +74,8 @@ class Powerset:
 
 def type(token: Token, primitives: dict[str, Union["Primitive","Powerset"]]):
     t = Type(token, primitives)
-    if not t.primitives:
-        token.error("Types must consist of at least one primitive")
+    #if not t.primitives:
+    #    token.error("Types must consist of at least one primitive")
     if len(t.primitives) == 1:
         return t.primitives[0]
     return t

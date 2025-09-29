@@ -1,8 +1,8 @@
 # Σ* 
 
 Σ* or *sigmastar* is an esoteric language where primitives are 
-denoted by single characters, thus making strustural types be
-comprised by a number of letters equal to their size.
+denoted by single characters, thus making structural types
+consist of a number of letters equal to their size.
 The language interoperates with Python, being able to call 
 its modules and be imported as a module.
 
@@ -17,9 +17,8 @@ The number `3` expands to three total repetitions of the last symbol.
 The set can also be written as `RRBBB`.
 
 Inputs and outputs are indistinguishable: fewer inputs are 
-zero-initialized, whereas more inputs create assertion checks 
-that the given value is actually computed. If you have more 
-than one consecutive primitives of the same type, you can use 
+zero-initialized, and even more of them are allowed (more later). 
+If you have more  than one consecutive primitives of the same type, you can use 
 a number to repeat them. For example `RRB3` is a shorthand for
 `RRBBB`. Other primitives are `N` for integers and `S` for
 strings. 
@@ -78,7 +77,8 @@ Type declarations like the above depend on structural matching of arguments.
 However, you may want to pass a function as an argument. The function type
 must be declared as a new primitive that forms the powerset of a structural type.
 Declaring powersets is done with the syntax `character: {type}`. 
-**There are no anonymous types.** This new primitive must also be a single character.
+**There are no anonymous types.** This new primitive must also be a single character,
+letting us write higher-order functions without introducing a heavy type system.
 
 ```ruby
 # example/module.st
@@ -97,6 +97,36 @@ B main() {
 }
 ```
 
+Previously, it was mentioned that more than the declared number of inputs are allowed,
+in line with covering a Cartesian space. This is done by runtime verification that 
+the values of extra inputs match the respective outputs. For example, consider the 
+following program, where an additional argument is passed to `addmul`. This argument 
+matches the returned outcome of `R.add`, creating an assertion against the latter's 
+computd value. At the same time, the return value is of type `R` and holds only the outcome 
+of `R.mul`.  
+
+
+```ruby
+#example/verify.st
+*: "sigmastar.ext"
+
+R4 addmul(x,y) {
+    return R.add(x,y), R.mul(x,y)
+}
+
+N main() {
+    result = addmul(2.0, 3.0, 50.0)
+    R.print(result)
+    return 0
+}
+```
+
+```bash
+python3 -m sigmastar example/verify.st 
+AssertionError: Return mismatch: expected 50.0, returned 5.0
+```
+
+
 
 
 ## 📚 Importing from Python
@@ -111,7 +141,7 @@ to access them.
 *: "sigmastar.ext" # import all from type-hinted Python module
 
 RRB3 compare(x,y) {
-    return R.lt(x,y), R.gt(x,y), R.eq(x,y)
+    return R.lt(x,y), R.gt(x,y), R.eq(x,y)  # R. is a decorative mnemonic
 }
 ```
 
