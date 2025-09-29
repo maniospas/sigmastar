@@ -1,12 +1,12 @@
-* "sigmastar.ext"
-b {R}
+* "sigmastar.ext"           # import all symbols
+u {RR}                      # new primitive (primitives have one letter)
 
-generate() b {
-    return \b 1.0|2.0|R.add
+generate(offset) Ru {       # in the space of Rx u
+    return \u offset|R.add  # \u casts anonymous {RR} to u, | is lambda application
 }
 
-main() N {
-    inc = generate()
-    R.print(inc(4.0))  # prints 3.0
-    return 0
+main() {
+    inc = generate(1.0)
+    R.print(inc(4.0))       # prints 5.0
 }
+
