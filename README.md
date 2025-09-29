@@ -10,57 +10,47 @@ its modules and be imported as a module.
 ## ⚡ Quickstart
 
 Here is some a simple Σ* function, using a *ruby* highlighter. 
-Its declaration starts from its type. That is a mapping within
-the set `RRB3`, indicating the Cartesian product 
+Its declaration contain its type: a mapping within
+the set `RRB3`. This notates the Cartesian product 
 *R (reals) x R (reals) x B (booleans) x B (booleans) x B (booleans)*. 
 The number `3` expands to three total repetitions of the last symbol. 
-The set can also be written as `RRBBB`.
-
-Inputs and outputs are indistinguishable: fewer inputs are 
-zero-initialized, and even more of them are allowed (more later). 
-If you have more  than one consecutive primitives of the same type, you can use 
-a number to repeat them. For example `RRB3` is a shorthand for
-`RRBBB`. Other primitives are `N` for integers and `S` for
-strings. 
+The set can also be written as `RRBBB`. 
+Other primitives are `N` for integers and `S` for strings. 
 
 
 ```ruby
 # example/module.st
 * "sigmastar.ext" # import all from type-hinted Python module
 
-RRB3 compare(x,y) {
+compare(x,y) RRB3 {
     return R.lt(x,y), R.gt(x,y), R.eq(x,y)
 }
 ```
 
-Arguments are variadic: missing ones are 
-set to zero (or False, etc) and returned alongside outputs. 
-If you give more inputs, respective outputs are not returned
-but assert that the provided values are retrieved. 
 
+Inputs and outputs are indistinguishable: fewer inputs are 
+zero-initialized, and even more of them are allowed (more on this later).
 For example, any `RRB3` definition that is given an `R` argument
 yields a value in `RB3`, given an `RRB` argument yields a value in `BB`,
 etc. Those returns are independent of how the function definition splt
 the type into inputs and outputs. This is a set-based view of function 
-spaces. Do note that an exception occurs if asserted outputs are not
-validated.
+spaces.
 
 Functions only accept one definition each, but you can namespace them
 by prepending `namespace.` to their names; dots are treated as characters,
-and from Python they are viewed as `__`. You can also add a `main` function
-that lets Σ* directly run the file. Notice that, in the example, we used `[item]`
-to obtain an index value. Furthermore, only outcomes that repeat the same 
+and from Python they are viewed as `__`. Add a `main` function
+that lets Σ* directly run the file; absense of a type by convention indicates
+the empty set `{}`. Notice that, in the example, we used `[item]`
+to obtain an index value. Only outcomes that repeat the same 
 type can be indexed.
 
 ```ruby
-N main() {
+main() {
     result = compare(1.0,2.0)
     B.print(result[0])
     B.print(result[1])
     B.print(result[2])
-    return 0
 }
-
 ```
 
 ```bash
@@ -82,14 +72,13 @@ a single character, letting us write skip type system complexities.
 * "sigmastar.ext" # import some python-defined symbols
 C {RRB} # function type
 
-CRRB symmetry(comparison, x,y) {
+symmetry(comparison, x,y) CRRB {
     return B.eq(comparison(x,y),comparison(y,x))
 }
 
-N main() {
+main() {
     is_symmetric = symmetry(R.eq,1.0,2.0)
     B.print(is_symmetric)
-    return 0
 }
 ```
 
@@ -106,14 +95,13 @@ of `R.mul`.
 #example/verify.st
 * "sigmastar.ext"
 
-R4 addmul(x,y) {
+addmul(x,y) R4 {
     return R.add(x,y), R.mul(x,y)
 }
 
-N main() {
+main() {
     result = addmul(2.0, 3.0, 50.0)
     R.print(result)
-    return 0
 }
 ```
 
@@ -124,25 +112,20 @@ AssertionError: Return mismatch: expected 50.0, returned 5.0
 
 ## 🧩 Lambdas
 
-You can create a lambda function with partially applied values
-by passing the notation `:type` as part of the arguments. 
-When this is done, all argument values (both inputs and outputs) 
-must be acknowledged to ensure that type positioning is well-understood, 
-and that assertions are pre-emptively asserted if needed.
+*Lambdas are under development.*
 
+You can create a lambda function with partially applied values
+by placing `*` before a function call. This grabs argument values
+and fixes them as first inputs.
 
 ```ruby
 * "sigmastar.ext"
-a {RRR}
-b {RR}
 
-N main() {
+main() {
     inc = *R.add(1.0)
     R.print(inc(7.0))  # prints 8.0
-    return 0
 }
 ```
-
 
 
 ## 📚 Importing from Python
@@ -156,7 +139,7 @@ to access them.
 # example/module.st
 * "sigmastar.ext" # import all from type-hinted Python module
 
-RRB3 compare(x,y) {
+compare(x,y) RRB3 {
     return R.lt(x,y), R.gt(x,y), R.eq(x,y)  # R. is a decorative mnemonic
 }
 ```

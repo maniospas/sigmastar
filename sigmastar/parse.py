@@ -114,7 +114,6 @@ class Parser:
     def _parse_function(self):
         # always start with a primitive
         #self.consume("F", "Expected F (function) declaration here")
-        signature = Type(self.next(), primitives)
         name = self.next()
         self.consume("(", "Expected opening parenthesis")
         arguments: list[Token] = list()
@@ -122,13 +121,18 @@ class Parser:
         while str(token) != ")":
             assert_variable_name(token)
             arguments.append(token)
-            if len(arguments) >= len(signature.primitives):
-                token.error("There are fewer or equal signature primitives than the number of arguments")
             token = self.next()
             if str(token) != ")":
                 if str(token)!=",":
                     token.error("Expected comma between argument names")
                 token = self.next()
+        sig_type = self.next()
+        if str(sig_type)=="{":
+            sig_type = Token("", sig_type.path, sig_type.row, sig_type.col)
+            self.pos -= 1
+        signature = Type(sig_type, primitives)
+        if len(arguments) > len(signature.primitives):
+            sig_type.error("There are fewer signature primitives than the number of arguments")
         self.consume("{", "Expected opening bracket")
         body = self._parse_function_body()
         self.pos -= 1
