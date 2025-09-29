@@ -72,12 +72,12 @@ False
 False
 ```
 
-## ⚙ Advanced concepts
+## ⚙ Powersets
 
 Type declarations like the above depend on structural matching of arguments.
 However, you may want to pass a function as an argument. The function type
-must be declared as a new primitive that is the powerset of a base combination
-of primitives enclosed per the syntax `character: {type}`. 
+must be declared as a new primitive that forms the powerset of a structural type.
+Declaring powersets is done with the syntax `character: {type}`. 
 **There are no anonymous types.** This new primitive must also be a single character.
 
 ```ruby
