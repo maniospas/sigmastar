@@ -6,11 +6,17 @@ consist of a number of letters equal to their size.
 The language transpiles to Python, can call 
 its modules and can be imported as a module.
 
+⚠ Experimental: syntax and the engine may change.
 
 ## ⚡ Quickstart
 
+Make sure that Python is installed in your system and clone this repo.
+Examples assume that the director *sigmastar/* is visible to your console.
+For example, you should be able to cat *sigmastar/__init__.py*.
+
 Here is a simple Σ* program, consisting of a `main` function without
-any type information. Use a *ruby* highlighter.
+any type information. Use a *ruby* highlighter, which tend to colorize
+keywords and symbols appropriately.
 
 
 ```ruby
@@ -52,13 +58,14 @@ For example, any `RRB3` definition given an `R` argument
 yields a value in `RB3`. Given an `RRB` argument, it yields a value in `BB`.
 And so on. 
 
-This is a generalization of function spaces that lets the be viewed as 
+This is a generalization of function spaces that lets them be viewed as 
 segments high-dimensional manifolds. If you want simpler intuition, just
 think of each function as defining a set.
 
 Functions only accept one definition each, but you can namespace them
 by prepending `namespace.` to their names; dots are treated as characters,
-and from Python they are viewed as `__`. Notice that, in the example, we used `[item]`
+and are replaced by `__` when viewed from integrated Pyhton code. 
+Notice that, in the example, we used `[item]`
 to obtain an index value. Only outcomes that repeat the same 
 type can be indexed. Now add a `main` function to the above example to look at
 one usage.
@@ -135,17 +142,41 @@ Create a lambda with partially applied arguments
 by placing `value|` before a function call. This creates a new
 function that calls the original whlle setting the value as first argument.
 To avoid ambiguity, **cast the result to a named type primitive** 
-per `\name expression`. If you forget, the language asks you to add a cast
-with an error message.
+per `\name expression`.
 
 ```ruby
+* "sigmastar.ext"           # import all symbols
+u {RR}                      # new primitive (primitives have one letter)
+
+generate(offset) Ru {       # in the space of R x u
+    return \u offset|R.add  # \u casts anonymous {RR} to u, | is lambda application
+}
+
+main() {
+    inc = generate(1.0)
+    R.print(inc(4.0))       # prints 5.0
+}
+```
+
+If you forget, the language asks you to add a cast
+with an error message, like below:
+
+```ruby
+# example/nocast_error.s
 * "sigmastar.ext"
 b {RR}
 
 main() {
-    inc = \b 1.0|R.add
+    inc = 1.0|R.add
     R.print(inc(7.0))  # prints 8.0
 }
+```
+
+```bash
+python3 -m sigmastar example/nocast_error.s
+at example/lambda.st:5:5
+    inc = 1.0|R.add
+    ~~> Cannot move nameless type {RR}: create a primitive like X {RR} and cast to it per inc = \X expression
 ```
 
 Chain lambda values without intermediate casting like so:
