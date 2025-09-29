@@ -1,9 +1,12 @@
 * "sigmastar.ext"
-a {RRR}
-b {RR}
+b {R}
+
+generate() b {
+    return \b 1.0|2.0|R.add
+}
 
 main() N {
-    inc = *R.add(1.0)
-    R.print(inc(7.0))  # prints 8.0
+    inc = generate()
+    R.print(inc(4.0))  # prints 3.0
     return 0
 }

@@ -11,13 +11,13 @@ class Primitive:
         self.is_primitive = True
 
     def pretty(self):
-        return self.alias+": {\\"+self.actual+"}"
+        return self.alias+" \\"+self.actual
 
     def comparable(self):
         return "{\\"+self.alias+"}"
 
 class Type:
-    def __init__(self, token: Token, primitives: dict[str, Union["Primitive","Powerset"]]):
+    def __init__(self, token: Token, primitives: dict[str, Union["Primitive", "Powerset", "FunctionType"]]):
         assert isinstance(token, Token)
         self.alias = str(token)
         pattern = re.compile(r"([A-Za-z])(\d*)")
@@ -56,9 +56,8 @@ class Type:
     def pretty(self):
         return self.alias if self.alias else "{}"
 
-class Powerset:
-    def __init__(self, alias: str, base: Union[Type,Primitive,"Powerset"]):
-        assert isinstance(base, Type) or isinstance(Base, Primitive) or base.__class__==self.__class__
+class FunctionType:
+    def __init__(self, alias: str, base: Union[Type,Primitive,"FunctionType", "Powerset"]):
         self.alias = str(alias)
         self.base = base
         self.is_primitive = True
@@ -69,10 +68,24 @@ class Powerset:
     
     def pretty(self):
         if self.alias is None: return self.comparable()
-        return self.alias+": {"+self.base.comparable()+"}"
+        return self.alias+" {"+self.base.comparable()+"}"
+
+class Powerset:
+    def __init__(self, alias: str, base: Union[Type,Primitive,"FunctionType", "Powerset"]):
+        self.alias = str(alias)
+        self.base = base
+        self.is_primitive = True
+        self.actual = "_assert_list"
+
+    def comparable(self):
+        return "["+self.base.comparable()+"]"
+    
+    def pretty(self):
+        if self.alias is None: return self.comparable()
+        return self.alias+" ["+self.base.comparable()+"]"
 
 
-def type(token: Token, primitives: dict[str, Union["Primitive","Powerset"]]):
+def type(token: Token, primitives: dict[str, Union["Primitive","Powerset","FunctionType"]]):
     t = Type(token, primitives)
     #if not t.primitives:
     #    token.error("Types must consist of at least one primitive")

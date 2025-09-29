@@ -1,7 +1,7 @@
 from sigmastar.parser.function import assert_variable_name, Function
 from sigmastar.parser.tokenize import tokenize, Token
 from sigmastar.parser.expressions import *
-from sigmastar.parser.types import Type, Primitive, Powerset, type
+from sigmastar.parser.types import Type, Primitive, Powerset, FunctionType, type
 from sigmastar.integration import primitives, builtins, load_python
 import importlib
 import atexit
@@ -24,7 +24,7 @@ class Parser:
         if str(value) != str(symbol):
             value.error(message)
 
-    def _parse_call(self):
+    def _parse_call_single_atom(self):
         value = self.next()
         if self.pos < len(self.tokens) and str(self.tokens[self.pos]) == "[":
             self.pos += 1
@@ -34,9 +34,6 @@ class Parser:
             return ExpressionAccess(base_expr, index_expr)
         if str(self.tokens[self.pos]) != "(":
             return ExpressionValue(value)
-        is_lambda = str(value)=="*"
-        if is_lambda:
-            value = self.next()
         assert_variable_name(value,) # this is guaranteed to be a function now, so check this
         self.pos += 1 # consume the opening parenthesis
         args = list()
@@ -47,7 +44,24 @@ class Parser:
             if str(self.tokens[self.pos])!=")":
                 self.consume(",", "Expected comma to separate argument names")
         self.pos += 1
-        return ExpressionCall(value, args, is_lambda=is_lambda)
+        return ExpressionCall(value, args)
+
+    def _parse_call(self):
+        if self.pos < len(self.tokens) and str(self.tokens[self.pos]) == "\\":
+            self.consume("\\", "Expected slash to cast")
+            target = self.next()
+            assert_variable_name(target)
+            return ExpressionCast(target, self._parse_call())
+
+        expr = self._parse_call_single_atom()
+        values = []
+        while self.pos < len(self.tokens) and str(self.tokens[self.pos]) == "|":
+            self.consume("|", "Expected curry operator")
+            values.append(expr)
+            expr = self._parse_call_single_atom()
+        if values:
+            return ExpressionLambdaApply(values, expr)
+        return expr
 
     def _parse_assignment(self, result: Token):
         assert_variable_name(result)
@@ -162,8 +176,18 @@ class Parser:
                 if len(key_str) != 1:
                     key.error("Primitive names must be a single character")
                 self.consume("{", "Expected opening bracket")
-                signature = type(self.next(), primitives)
+                signature = Type(self.next(), primitives)
                 self.consume("}", "Expected closing bracket")
+                primitives[key_str] = FunctionType(key_str, signature)
+            elif value_str=="[":
+                self.pos -= 1
+                if key_str in primitives:
+                    key.error("Primitive already exists: "+primitives[key_str].pretty())
+                if len(key_str) != 1:
+                    key.error("Primitive names must be a single character")
+                self.consume("[", "Expected opening bracket")
+                signature = type(self.next(), primitives)
+                self.consume("]", "Expected closing bracket")
                 primitives[key_str] = Powerset(key_str, signature)
             else: 
                 self.pos -= 2

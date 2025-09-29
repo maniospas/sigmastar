@@ -3,8 +3,8 @@
 Σ* or *sigmastar* is an esoteric language where primitives are 
 denoted by single characters, thus making structural types
 consist of a number of letters equal to their size.
-The language interoperates with Python, being able to call 
-its modules and be imported as a module.
+The language transpiles to Python, can call 
+its modules and can be imported as a module.
 
 
 ## ⚡ Quickstart
@@ -30,11 +30,11 @@ compare(x,y) RRB3 {
 
 Inputs and outputs are indistinguishable: fewer inputs are 
 zero-initialized, and even more of them are allowed (more on this later).
-For example, any `RRB3` definition that is given an `R` argument
-yields a value in `RB3`, given an `RRB` argument yields a value in `BB`,
-etc. Those returns are independent of how the function definition splt
+For example, any `RRB3` definition given an `R` argument
+yields a value in `RB3`. Given an `RRB` argument, it yields a value in `BB`.
+And so on. Those returns are independent of how the function definition splts
 the type into inputs and outputs. This is a set-based view of function 
-spaces.
+spaces as sets that take up space in a high-dimensional manifold.
 
 Functions only accept one definition each, but you can namespace them
 by prepending `namespace.` to their names; dots are treated as characters,
@@ -112,18 +112,56 @@ AssertionError: Return mismatch: expected 50.0, returned 5.0
 
 ## 🧩 Lambdas
 
-*Lambdas are under development.*
-
-You can create a lambda function with partially applied values
-by placing `*` before a function call. This grabs argument values
-and fixes them as first inputs.
+Create a lambda function with partially applied values
+by placing `value|` before a function call. This creates a new
+function that calls the original whlle setting the value as first argument.
+To avoid ambiguity, **cast the result to a named type primitive** 
+per `\name expression`. If you forget, the language asks you to add a cast
+with an error message.
 
 ```ruby
 * "sigmastar.ext"
+b {RR}
 
 main() {
-    inc = *R.add(1.0)
+    inc = \b 1.0|R.add
     R.print(inc(7.0))  # prints 8.0
+}
+```
+
+Chain lambda values without intermediate casting like so:
+
+```ruby
+* "sigmastar.ext"
+b {R}
+
+main() {
+    lazyadd = \b 1.0|2.0|R.add
+    R.print(lazyadd())  # prints 3.0
+}
+```
+
+
+The same mechanism can gather side-effects and apply them later.
+*This example's notation is under development.*
+
+```ruby
+* "sigmastar.ext"
+X [S]
+
+S.batch(s) X {
+    i = 0
+    while R.lt(i, len(s)) {
+        S.print(s[i])
+    }
+}
+
+main() {
+    print = "Title"|S.batch # creates S* lambda
+    print = "line1"|print # still S* type
+    print = "line2"|print # in general, accumualate effects
+
+    test() # apply effects all at once
 }
 ```
 

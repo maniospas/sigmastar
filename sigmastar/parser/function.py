@@ -1,4 +1,4 @@
-from sigmastar.parser.types import Type, Primitive
+from sigmastar.parser.types import Type, Primitive, FunctionType, Powerset
 from sigmastar.parser.tokenize import Token
 import keyword
 
@@ -24,7 +24,7 @@ class Context:
 
 class Function:
     def __init__(self, name: Token, args: dict[str,Type], ret: Type, expressions: list, is_lambda=False):
-        assert isinstance(ret, Type) or isinstance(ret, Primitive)
+        assert isinstance(ret, Type) or isinstance(ret, Primitive) or isinstance(ret, FunctionType) or isinstance(ret, Powerset)
         self.name = name
         self.args = args
         self.ret = ret
