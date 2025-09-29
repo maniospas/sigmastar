@@ -11,12 +11,12 @@ its modules and can be imported as a module.
 ## ⚡ Quickstart
 
 Make sure that Python is installed in your system and clone this repo.
-Examples assume that the director *sigmastar/* is visible to your console.
+Examples assume that the directory *sigmastar/* is visible to your console.
 For example, you should be able to cat *sigmastar/__init__.py*.
 
 Here is a simple Σ* program, consisting of a `main` function without
 any type information. Use a *ruby* highlighter, which tend to colorize
-keywords and symbols appropriately.
+keywords and symbols nicely.
 
 
 ```ruby
@@ -53,8 +53,9 @@ compare(x,y) RRB3 {
 
 
 Inputs and outputs are indistinguishable: fewer inputs are 
-zero-initialized, and even more of them are allowed (more on this later).
-For example, any `RRB3` definition given an `R` argument
+zero-initialized, to *0, 0.0, False, ""*, and so on. 
+Also, more than the declared arguments are allowed, up to type dimensions 
+(more on this later). For example, any `RRB3` definition given an `R` argument
 yields a value in `RB3`. Given an `RRB` argument, it yields a value in `BB`.
 And so on. 
 
@@ -64,7 +65,7 @@ think of each function as defining a set.
 
 Functions only accept one definition each, but you can namespace them
 by prepending `namespace.` to their names; dots are treated as characters,
-and are replaced by `__` when viewed from integrated Pyhton code. 
+and are replaced by `__` when viewed from integrated Python code. 
 Notice that, in the example, we used `[item]`
 to obtain an index value. Only outcomes that repeat the same 
 type can be indexed. Now add a `main` function to the above example to look at
@@ -113,7 +114,7 @@ in line with covering a Cartesian space. This is done by runtime verification th
 the values of extra inputs match the respective outputs. For example, consider the 
 following program, where an additional argument is passed to `addmul`. This argument 
 matches the returned outcome of `R.add`, creating an assertion against the latter's 
-computd value. At the same time, the return value is of type `R` and holds only the outcome 
+computed value. At the same time, the return value is of type `R` and holds only the outcome 
 of `R.mul`.  
 
 
@@ -140,7 +141,7 @@ AssertionError: Return mismatch: expected 50.0, returned 5.0
 
 Create a lambda with partially applied arguments
 by placing `value|` before a function call. This creates a new
-function that calls the original whlle setting the value as first argument.
+function that calls the original while setting the value as first argument.
 To avoid ambiguity, **cast the result to a named type primitive** 
 per `\name expression`.
 
@@ -209,7 +210,7 @@ S.batch(s) X {
 main() {
     print = "Title"|S.batch # creates S* lambda
     print = "line1"|print # still S* type
-    print = "line2"|print # in general, accumualate effects
+    print = "line2"|print # in general, accumulate effects
 
     test() # apply effects all at once
 }
