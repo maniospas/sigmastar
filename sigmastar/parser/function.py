@@ -24,11 +24,18 @@ class Context:
 
 class Function:
     def __init__(self, name: Token, args: dict[str,Type], ret: Type, expressions: list):
+        assert isinstance(ret, Type) or isinstance(ret, Primitive)
         self.name = name
         self.args = args
         self.ret = ret
         self.expressions = expressions
-        assert isinstance(ret, Type) or isinstance(ret, Primitive)
+
+    def debug(self):
+        print("function:", self.name)
+        print("args:")
+        for arg in self.args:
+            print("  "+arg+":", self.args[arg].pretty())
+        print("return:", self.ret.pretty())
 
     def code(self, nesting):
         ret = ""
@@ -62,7 +69,7 @@ class Function:
         context = Context(globs, self.args, self.ret)
         for expr in self.expressions:
             expr.validate(context)
-        assert self.expressions, "Cannot validate an F (function) with no expressions"
+        assert self.expressions, "Cannot validate a function with no expressions"
 
 def assert_variable_name(token: Token, message=""):
     name = str(token)

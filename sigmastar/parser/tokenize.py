@@ -29,7 +29,7 @@ def tokenize(path: str):
 
     # --- (a) Strip // comments completely ---
     # Removes everything from // to end of line.
-    text = re.sub(r"//.*", "", text)
+    text = re.sub(r"#.*", "", text)
 
     # Track line starts for row/col calculation
     line_starts = [0]
@@ -54,4 +54,22 @@ def tokenize(path: str):
         col = start - line_starts[line_idx] + 1
         tokens.append(Token(m.group(), path, row, col))
 
-    return tokens
+    merged: list[Token] = []
+    i = 0
+    while i < len(tokens):
+        t = tokens[i]
+        if re.fullmatch(r"\w+", t.name):
+            j = i
+            parts = [t.name]
+            while j + 2 < len(tokens) \
+                  and tokens[j+1].name == "." \
+                  and re.fullmatch(r"\w+", tokens[j+2].name):
+                parts.append(tokens[j+2].name)
+                j += 2
+            if len(parts) > 1:
+                merged.append(Token("__".join(parts), t.path, t.row, t.col))
+                i = j + 1
+                continue
+        merged.append(t)
+        i += 1
+    return merged

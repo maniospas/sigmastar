@@ -1,10 +1,12 @@
-C = {RRB}// f: f(0,0,False) and f(1,0)!=f(0,1)}
+*: "sigmastar.ext" # import statement (_ directly imports)
+C: {RRB} # powerset
 
 CRRB symmetry(comparison, x,y) {
-    return __eq__(comparison(x,y),comparison(y,x))
+    return B.eq(comparison(x,y),comparison(y,x))
 }
 
-B main() {
-    print(symmetry(gt,1.0,2.0))
-    return True
+N main() {
+    is_symmetric = symmetry(R.eq,1.0,2.0)
+    B.print(is_symmetric)
+    return 0
 }

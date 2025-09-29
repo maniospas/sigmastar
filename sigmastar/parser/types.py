@@ -1,4 +1,5 @@
 from sigmastar.parser.tokenize import Token
+from typing import Union
 import re
 
 
@@ -10,10 +11,13 @@ class Primitive:
         self.is_primitive = True
 
     def pretty(self):
-        return self.alias+" ("+self.actual+")"
+        return self.alias+": {\\"+self.actual+"}"
+
+    def comparable(self):
+        return "{\\"+self.alias+"}"
 
 class Type:
-    def __init__(self, token: Token, primitives: dict[str, "Primitive"]):
+    def __init__(self, token: Token, primitives: dict[str, Union["Primitive","Powerset"]]):
         assert isinstance(token, Token)
         self.alias = str(token)
         pattern = re.compile(r"([A-Za-z])(\d*)")
@@ -46,10 +50,29 @@ class Type:
             normalized_alias += primitive.alias
         self.alias = normalized_alias
 
+    def comparable(self):
+        return self.alias
+
     def pretty(self):
         return self.alias
 
-def type(token: Token, primitives: dict[str, "Primitive"]):
+class Powerset:
+    def __init__(self, alias: str, base: Union[Type,Primitive,"Powerset"]):
+        assert isinstance(base, Type) or isinstance(Base, Primitive) or base.__class__==self.__class__
+        self.alias = str(alias)
+        self.base = base
+        self.is_primitive = True
+        self.actual = "_assert_callable"
+
+    def comparable(self):
+        return "{"+self.base.comparable()+"}"
+    
+    def pretty(self):
+        if self.alias is None: return self.comparable()
+        return self.alias+": {"+self.base.comparable()+"}"
+
+
+def type(token: Token, primitives: dict[str, Union["Primitive","Powerset"]]):
     t = Type(token, primitives)
     if not t.primitives:
         token.error("Types must consist of at least one primitive")

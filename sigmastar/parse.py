@@ -1,8 +1,8 @@
 from sigmastar.parser.function import assert_variable_name, Function
 from sigmastar.parser.tokenize import tokenize, Token
 from sigmastar.parser.expressions import *
-from sigmastar.parser.types import Type, Primitive, type
-from sigmastar.extern import primitives, builtins
+from sigmastar.parser.types import Type, Primitive, Powerset, type
+from sigmastar.integration import primitives, builtins, load_python
 import importlib
 import atexit
 import os
@@ -26,6 +26,13 @@ class Parser:
 
     def _parse_call(self):
         value = self.next()
+        if self.pos < len(self.tokens) and str(self.tokens[self.pos]) == "[":
+            self.pos += 1
+            index_expr = self._parse_call()
+            self.consume("]", "Expected right bracket to close index access")
+            base_expr = ExpressionValue(value)
+            return ExpressionAccess(base_expr, index_expr)
+            
         if str(self.tokens[self.pos]) != "(":
             return ExpressionValue(value)
         assert_variable_name(value,) # this is guaranteed to be a function now, so check this
@@ -79,7 +86,6 @@ class Parser:
         self.consume("}", "Expected '}' to end while body")
         return ExpressionWhile(test, body)
 
-
     def _parse_function_body(self):
         expressions: list = list()
         while self.pos<len(self.tokens):
@@ -96,6 +102,9 @@ class Parser:
                 expressions.append(self._parse_if())
             elif str(token) == "while":
                 expressions.append(self._parse_while())
+            elif self.pos<len(self.tokens) and str(self.tokens[self.pos]) == "(":
+                self.pos -= 1
+                expressions.append(self._parse_call())
             else:
                 expressions.append(self._parse_assignment(token))
         return expressions
@@ -103,9 +112,9 @@ class Parser:
     def _parse_function(self):
         # always start with a primitive
         #self.consume("F", "Expected F (function) declaration here")
-        signature = type(self.next(), primitives)
+        signature = Type(self.next(), primitives)
         name = self.next()
-        self.consume("(", "Expected opening parenthesis expected here")
+        self.consume("(", "Expected opening parenthesis")
         arguments: list[Token] = list()
         token = self.next()
         while str(token) != ")":
@@ -116,12 +125,12 @@ class Parser:
             token = self.next()
             if str(token) != ")":
                 if str(token)!=",":
-                    token.error("Expected comma to separate argument names")
+                    token.error("Expected comma between argument names")
                 token = self.next()
-        self.consume("{", "Expected ppening parenthesis bracket here")
+        self.consume("{", "Expected opening bracket")
         body = self._parse_function_body()
         self.pos -= 1
-        self.consume("}", "Expected closing parenthesis bracket here")
+        self.consume("}", "Expected closing bracket")
         return Function(name, 
             {str(arg): sig for arg, sig in zip(arguments, signature.primitives)},
             type(Token("".join([ret.alias for ret in signature.primitives[len(arguments):]]), name.path,name.row,name.col), primitives),
@@ -129,37 +138,42 @@ class Parser:
         )
 
     def parse(self):
+        custom_imports: list[str] = list()
         functions: list[Function] = list()
         while self.pos<len(self.tokens):
-            functions.append(self._parse_function())
+            if self.pos<len(self.tokens)-1 and str(self.tokens[self.pos+1])==":":
+                key = self.next()
+                key_str = str(key)
+                self.consume(":", "Expected double dots")
+                value = self.next()
+                value_str = str(value)
+                if len(value_str)>=2 and value_str[0]=="\"" and value_str[-1]=="\"":
+                    try: custom_imports.append(load_python(key_str, value_str[1:-1]))
+                    except ModuleNotFoundError as e: value.error(str(e))
+                    except Exception as e: value.error(str(e))
+                else:
+                    self.pos -= 1
+                    if key_str in primitives:
+                        key.error("Primitive already exists: "+primitives[key_str].pretty())
+                    if len(key_str) != 1:
+                        key.error("Primitive names must be a single character")
+                    self.consume("{", "Expected opening bracket")
+                    signature = type(self.next(), primitives)
+                    self.consume("}", "Expected closing bracket")
+                    primitives[key_str] = Powerset(key_str, signature)
+            else: 
+                functions.append(self._parse_function())
         func_globs = builtins|{str(function.name): function for function in functions}
+
+        code = "\n".join(custom_imports)
         for func in functions:
             func.validate(func_globs)
-        code = ""
-        code += "def __add__(x,y):\n"
-        code += "    return x+y\n"
-        code += "def __sub__(x,y):\n"
-        code += "    return x-y\n"
-        code += "def __mul__(x,y):\n"
-        code += "    return x*y\n"
-        code += "def __div__(x,y):\n"
-        code += "    return x/y\n"
-        code += "def __lt__(x,y):\n"
-        code += "    return x<y\n"
-        code += "def __gt__(x,y):\n"
-        code += "    return x>y\n"
-        code += "def __le__(x,y):\n"
-        code += "    return x<=y\n"
-        code += "def __ge__(x,y):\n"
-        code += "    return x>=y\n"
-        code += "def __eq__(x,y):\n"
-        code += "    return x==y\n"
-        code += "def __neq__(x,y):\n"
-        code += "    return x!=y\n"
-        code += "def __not__(x):\n"
-        code += "    return not x\n"
-        code += "def __abs__(x):\n"
-        code += "    return abs(x)\n"
+        code += "def __Rprint__(x):\n"
+        code += "    print(x)\n"
+        code += "    return x\n"
+        code += "def _assert_callable(x):\n"
+        code += "    if not callable(x): raise Exception('Not yet implemented default callables')\n"
+        code += "    return x\n"
         code += "def _flatten(*x):\n"
         code += "    if not isinstance(x, tuple): return x\n"
         code += "    out = list()\n"

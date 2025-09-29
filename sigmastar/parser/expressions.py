@@ -1,8 +1,8 @@
 from sigmastar.parser.tokenize import Token
-from sigmastar.parser.types import Primitive, Type, type
+from sigmastar.parser.types import Primitive, Powerset, Type, type
 from sigmastar.parser.function import *
 from sigmastar.parser.function import _flatten
-from sigmastar.extern import primitives
+from sigmastar.integration import primitives
 
 
 class ExpressionIf:
@@ -56,29 +56,43 @@ class ExpressionWhile:
             expr.validate(context)
         return None
 
-
 class ExpressionCall:
     def __init__(self, op: Token, args: list):
         assert isinstance(op, Token)
         self.op = op
         self.args = args
 
-    def code(self):
-        return str(self.op)+"("+",".join([arg.code() for arg in self.args])+")"
+    def code(self, nesting=""):
+        return nesting+str(self.op)+"("+",".join([arg.code() for arg in self.args])+")"+("\n" if nesting else "")
 
     def validate(self, context: Context):
         func = context.globals.get(str(self.op), None)
         if not func:
-            self.op.error("No F (function) definition with this name")
+            func = context.locals.get(str(self.op), None)
+            if not isinstance(func, Powerset):
+                self.op.error("No function definition or {powerset} variable with this name")
+            else:
+                if len(self.args) > len(func.base.primitives):
+                    self.op.error(f"Expected at most {len(func.args)} but got {len(self.args)} arguments")
+                func = Function(str(self.op), 
+                    args={"__arg"+str(idx): arg for idx, arg in enumerate(func.base.primitives[:len(self.args)])}, 
+                    ret=type(
+                        Token(",".join([prim.alias for prim in func.base.primitives[len(self.args):]]),
+                            self.op.path, self.op.row, self.op.col
+                        ), 
+                        primitives
+                    ),
+                    expressions=None
+                )
         if len(self.args) != len(func.args):
             self.op.error(f"Expected {len(func.args)} but got {len(self.args)} arguments")
         i = 0
         for self_arg, func_arg in zip(self.args, func.args):
-            i + 0
+            i += 1
             self_arg_type = self_arg.validate(context)
-            assert isinstance(self_arg_type, Type) or isinstance(self_arg_type, Primitive)
-            if self_arg_type.alias != func.args[func_arg].alias:
-                self.op.error(f"Expected {func.args[func_arg].pretty()} but got {self_arg_type.pretty()} type at argument {i+1}")
+            assert isinstance(self_arg_type, Type) or isinstance(self_arg_type, Primitive) or isinstance(self_arg_type, Powerset)
+            if self_arg_type.comparable() != func.args[func_arg].comparable():
+                self.op.error(f"Expected {func.args[func_arg].pretty()} but got {self_arg_type.pretty()} type at argument '{func_arg}' (argument {i})")
         return func.ret
 
 class ExpressionValue:
@@ -110,7 +124,15 @@ class ExpressionValue:
             return self.cache
         self_arg_type = context.locals.get(str(self.value), None)
         if self_arg_type is None:
-            self.value.error("No local variable with this name")
+            self_arg_type = context.globals.get(str(self.value), None)
+            if self_arg_type is None:
+                self.value.error("No local variable with this name")
+            assert isinstance(self_arg_type, Function), "Internal error: need to retrieve function here"
+            types = [self_arg_type.args[arg] for arg in self_arg_type.args]+( 
+                [self_arg_type.ret] if self_arg_type.ret.is_primitive else [ret for ret in self_arg_type.ret]
+            )
+            base = type(Token("".join([t.alias for t in types]), self.value.path, self.value.row, self.value.col), primitives)
+            self_arg_type = Powerset("", base=base)
         return self_arg_type
 
 
@@ -180,3 +202,42 @@ class ExpressionAssign:
         else:
             context.locals[str(self.result)] = joined
         return None
+
+
+class ExpressionAccess:
+    def __init__(self, value_expr, index_expr):
+        self.value_expr = value_expr
+        self.index_expr = index_expr
+
+    def code(self):
+        return f"{self.value_expr.code()}[{self.index_expr.code()}]"
+
+    def validate(self, context: Context):
+        container_type = self.value_expr.validate(context)
+        assert isinstance(container_type, (Type, Primitive, Powerset))
+        if isinstance(container_type, Primitive):
+            self.value_expr.value.error(
+                f"Cannot index primitive type {container_type.pretty()}"
+            )
+        idx_type = self.index_expr.validate(context)
+        assert isinstance(idx_type, (Type, Primitive))
+        if idx_type.alias != primitives["N"].alias:
+            self.index_expr.value.error(
+                f"Index must be of type {primitives['N'].pretty()}, "
+                f"got {idx_type.pretty()}"
+            )
+        element_type = (
+            container_type.base if isinstance(container_type, Powerset)
+            else container_type
+        )
+        assert isinstance(element_type, Type), (
+            "Internal error: element_type should be a Type"
+        )
+        aliases = {prim.alias for prim in element_type.primitives}
+        if len(aliases) != 1:
+            self.value_expr.value.error(
+                "All primitives of the indexed value must have the same type, "
+                f"but found {', '.join(sorted(aliases))}"
+            )
+        only_alias = next(iter(aliases))
+        return primitives[only_alias]
